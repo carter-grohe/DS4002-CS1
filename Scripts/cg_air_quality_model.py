@@ -18,7 +18,7 @@ import matplotlib.dates as mdates       # For formatting date axes on plots
 
 
 # --- Step 2: Load data ---
-df = pd.read_csv("AirQualityUCI.csv")   # Load the dataset from CSV
+df = pd.read_csv("Data/AirQualityUCI.csv")   # Load the dataset from CSV
 
 # Select relevant columns (pollutants and environmental variables)
 cols = ['Date', 'Time', 'CO(GT)', 'NMHC(GT)', 'C6H6(GT)', 
@@ -74,7 +74,7 @@ X_train = train[feature_cols]
 X_test = test[feature_cols]
 
 # Save the cleaned and processed dataset for future reference
-df.to_csv("cleaned_airquality_data.csv", index=False)
+df.to_csv("Data/cleaned_airquality_data_cg.csv", index=False)
 
 
 # --- Step 8: Train Random Forest models ---
@@ -106,6 +106,10 @@ for pollutant in pollutants:
         'mae': mean_absolute_error(y_test, y_pred),
         'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
     }
+
+
+for pollutant in pollutants:
+    results[pollutant]['model'].n_jobs = 1
 
 
 # --- Step 9: Display evaluation summary ---
@@ -169,7 +173,7 @@ future_hours = 720
 last_row = df.iloc[-1].copy()  # last observed values
 
 # Create future datetime range (April)
-future_dates = pd.date_range(start=df['Date'].max() + pd.Timedelta(hours=1), periods=future_hours, freq='H')
+future_dates = pd.date_range(start=df['Date'].max() + pd.Timedelta(hours=1), periods=future_hours, freq='h')  
 future_df = pd.DataFrame({
     'Date': future_dates,
     'Hour': future_dates.hour,
@@ -207,7 +211,7 @@ for i in range(future_hours):
     # Predict each pollutant for this time step
     for pollutant in pollutants:
         model = results[pollutant]['model']
-        pred = model.predict([row_features])[0]
+        pred = model.predict(pd.DataFrame([row_features], columns=feature_cols))[0] 
         predictions[pollutant].append(pred)
 
 
@@ -233,5 +237,5 @@ for pollutant in pollutants:
     future_predictions_df[pollutant] = predictions[pollutant]
 
 # Save to CSV for later analysis
-future_predictions_df.to_csv("predicted_airquality_next_month.csv", index=False)
+future_predictions_df.to_csv("Data/predicted_airquality_next_month.csv", index=False)
 print("Future predictions saved to predicted_airquality_next_month.csv")
